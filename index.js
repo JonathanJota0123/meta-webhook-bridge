@@ -7,10 +7,9 @@ const PORT = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 
-// Ruta para el Webhook de verificación y recepción de mensajes
+// Usar el router corregido
 app.use('/webhook', webhook);
 
-// Iniciar el servidor
 app.listen(PORT, () => {
   console.log(`🚀 Servidor iniciado en http://localhost:${PORT}`);
 });
