@@ -1,41 +1,51 @@
+// bot.js
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const axios = require('axios');
 
 const MAKE_WEBHOOK_URL = process.env.MAKE_WEBHOOK_URL || 'https://hook.us2.make.com/XXXXXXXXXXXXX';
 
-const client = new Client({
-  authStrategy: new LocalAuth(),
-  puppeteer: {
-    headless: true, // Cambia a false si quieres ver el navegador en local
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  },
-});
+let client; // Variable para almacenar el cliente
 
-client.on('qr', (qr) => {
-  console.log('🔐 Escanea este QR en tu WhatsApp:');
-  qrcode.generate(qr, { small: true });
-});
+function initBot() {
+  client = new Client({
+    authStrategy: new LocalAuth(),
+    puppeteer: {
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    },
+  });
 
-client.on('ready', () => {
-  console.log('✅ Cliente de WhatsApp listo');
-});
+  client.on('qr', (qr) => {
+    console.log('🔐 Escanea este QR en tu WhatsApp:');
+    qrcode.generate(qr, { small: true });
+  });
 
-client.on('message', async (message) => {
-  const text = message.body;
-  const from = message.from;
+  client.on('ready', () => {
+    console.log('✅ Cliente de WhatsApp listo');
+  });
 
-  console.log(`📨 Mensaje recibido de ${from}: ${text}`);
+  client.on('message', async (message) => {
+    const text = message.body;
+    const from = message.from;
 
-  // Enviar el mensaje a Make (Integromat)
-  try {
-    await axios.post(MAKE_WEBHOOK_URL, {
-      from,
-      text,
-    });
-  } catch (error) {
-    console.error('❌ Error enviando a Make:', error.message);
-  }
-});
+    console.log(`📨 Mensaje recibido de ${from}: ${text}`);
 
-client.initialize();
+    try {
+      await axios.post(MAKE_WEBHOOK_URL, {
+        from,
+        text,
+      });
+    } catch (error) {
+      console.error('❌ Error enviando a Make:', error.message);
+    }
+  });
+
+  client.initialize();
+}
+
+// Exportamos la función y el cliente
+module.exports = {
+  initBot,
+  clientInstance: client,
+};
