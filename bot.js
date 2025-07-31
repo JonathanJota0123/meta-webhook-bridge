@@ -1,51 +1,42 @@
 // bot.js
+
 const { Client, LocalAuth } = require('whatsapp-web.js');
-const qrcode = require('qrcode-terminal');
-const axios = require('axios');
+const qrcode = require('qrcode');
+const fs = require('fs');
 
-const MAKE_WEBHOOK_URL = process.env.MAKE_WEBHOOK_URL || 'https://hook.us2.make.com/XXXXXXXXXXXXX';
+let qrCodeImage = ''; // QR en formato base64 accesible desde index.js
 
-let client; // Variable para almacenar el cliente
+const client = new Client({
+  authStrategy: new LocalAuth(),
+  puppeteer: {
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  }
+});
 
-function initBot() {
-  client = new Client({
-    authStrategy: new LocalAuth(),
-    puppeteer: {
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    },
-  });
+client.on('qr', async (qr) => {
+  console.log('✅ QR generado. Escanéalo desde /qr');
 
-  client.on('qr', (qr) => {
-    console.log('🔐 Escanea este QR en tu WhatsApp:');
-    qrcode.generate(qr, { small: true });
-  });
+  try {
+    qrCodeImage = await qrcode.toDataURL(qr);
+  } catch (err) {
+    console.error('❌ Error generando QR:', err);
+  }
+});
 
-  client.on('ready', () => {
-    console.log('✅ Cliente de WhatsApp listo');
-  });
+client.on('ready', () => {
+  console.log('🤖 Bot de WhatsApp conectado correctamente.');
+});
 
-  client.on('message', async (message) => {
-    const text = message.body;
-    const from = message.from;
+client.on('message', async (message) => {
+  if (message.body.toLowerCase() === 'hola') {
+    await message.reply('¡Hola! ¿En qué puedo ayudarte hoy?');
+  }
+});
 
-    console.log(`📨 Mensaje recibido de ${from}: ${text}`);
+client.initialize();
 
-    try {
-      await axios.post(MAKE_WEBHOOK_URL, {
-        from,
-        text,
-      });
-    } catch (error) {
-      console.error('❌ Error enviando a Make:', error.message);
-    }
-  });
-
-  client.initialize();
-}
-
-// Exportamos la función y el cliente
+// Exportar QR para que index.js lo sirva
 module.exports = {
-  initBot,
-  clientInstance: client,
+  getQrCode: () => qrCodeImage
 };
