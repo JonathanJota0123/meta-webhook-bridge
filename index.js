@@ -1,39 +1,21 @@
 // index.js
-require('./bot');
 
 const express = require('express');
-const bodyParser = require('body-parser');
-require('dotenv').config();
-
-const webhook = require('./webhook');
-const initBot = require('./bot'); // <-- Importa el bot
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(bodyParser.json());
+const { getQrCode } = require('./bot'); // Importa el QR desde bot.js
 
-// Ruta para Webhook de Meta o Make
-app.use('/webhook', webhook);
+app.get('/', (req, res) => {
+  res.send('🤖 El servidor Express está funcionando.');
+});
 
-// Inicializa el bot de WhatsApp
-initBot();
-
-// Ruta opcional para enviar mensajes manualmente (por POST)
-app.post('/responder', async (req, res) => {
-  const { to, text } = req.body;
-
-  try {
-    const client = require('./bot').clientInstance; // Se obtiene el cliente ya inicializado
-    const chat = await client.getChatById(to);
-    await chat.sendMessage(text);
-    res.send('✅ Mensaje enviado');
-  } catch (error) {
-    console.error('❌ Error al responder:', error);
-    res.status(500).send('Error al responder');
-  }
+app.get('/qr', (req, res) => {
+  const qr = getQrCode();
+  if (!qr) return res.send('🔄 QR aún no generado. Intenta nuevamente en unos segundos.');
+  res.send(`<h2>Escanea este código QR con tu WhatsApp:</h2><img src="${qr}" />`);
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor iniciado en http://localhost:${PORT}`);
+  console.log(`🚀 Servidor Express en línea: http://localhost:${PORT}`);
 });
