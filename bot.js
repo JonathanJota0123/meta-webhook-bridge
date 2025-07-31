@@ -1,42 +1,26 @@
-// bot.js
+const puppeteer = require("puppeteer");
 
-const { Client, LocalAuth } = require('whatsapp-web.js');
-const qrcode = require('qrcode');
-const fs = require('fs');
-
-let qrCodeImage = ''; // QR en formato base64 accesible desde index.js
-
-const client = new Client({
-  authStrategy: new LocalAuth(),
-  puppeteer: {
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
-  }
-});
-
-client.on('qr', async (qr) => {
-  console.log('✅ QR generado. Escanéalo desde /qr');
+async function handleIncomingMessage(messageData) {
+  // Aquí puedes extraer el texto del mensaje si deseas
+  // const message = messageData.entry[0]?.changes[0]?.value?.messages[0]?.text?.body;
 
   try {
-    qrCodeImage = await qrcode.toDataURL(qr);
-  } catch (err) {
-    console.error('❌ Error generando QR:', err);
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+
+    const page = await browser.newPage();
+    await page.goto("https://example.com");
+
+    // Realiza alguna acción con Puppeteer aquí si deseas
+
+    await browser.close();
+  } catch (error) {
+    console.error("Error con Puppeteer:", error);
   }
-});
+}
 
-client.on('ready', () => {
-  console.log('🤖 Bot de WhatsApp conectado correctamente.');
-});
-
-client.on('message', async (message) => {
-  if (message.body.toLowerCase() === 'hola') {
-    await message.reply('¡Hola! ¿En qué puedo ayudarte hoy?');
-  }
-});
-
-client.initialize();
-
-// Exportar QR para que index.js lo sirva
 module.exports = {
-  getQrCode: () => qrCodeImage
+  handleIncomingMessage
 };
