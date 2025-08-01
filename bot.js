@@ -1,26 +1,27 @@
-const puppeteer = require("puppeteer");
+const { Client, LocalAuth } = require('whatsapp-web.js');
+const qrcode = require('qrcode-terminal');
 
-async function handleIncomingMessage(messageData) {
-  // Aquí puedes extraer el texto del mensaje si deseas
-  // const message = messageData.entry[0]?.changes[0]?.value?.messages[0]?.text?.body;
-
-  try {
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
-
-    const page = await browser.newPage();
-    await page.goto("https://example.com");
-
-    // Realiza alguna acción con Puppeteer aquí si deseas
-
-    await browser.close();
-  } catch (error) {
-    console.error("Error con Puppeteer:", error);
+const client = new Client({
+  authStrategy: new LocalAuth(),
+  puppeteer: {
+    args: ['--no-sandbox'],
+    headless: true
   }
-}
+});
 
-module.exports = {
-  handleIncomingMessage
-};
+client.on('qr', qr => {
+  console.log('📱 Escanea este QR con tu WhatsApp:');
+  qrcode.generate(qr, { small: true });
+});
+
+client.on('ready', () => {
+  console.log('✅ Bot conectado correctamente a WhatsApp!');
+});
+
+client.on('message', async msg => {
+  if (msg.body.toLowerCase() === 'hola') {
+    await msg.reply('¡Hola! ¿En qué puedo ayudarte? 🤖');
+  }
+});
+
+client.initialize();
